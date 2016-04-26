@@ -10,9 +10,9 @@ import base64
 from libkeepass.crypto import xor, sha256, aes_cbc_decrypt, aes_cbc_encrypt
 from libkeepass.crypto import transform_key, pad, unpad
 
-from libkeepass.common import load_keyfile, stream_unpack
+from libkeepass.libkeepass_common import load_keyfile, stream_unpack
 
-from libkeepass.common import KDBFile, HeaderDictionary
+from libkeepass.libkeepass_common import KDBFile, HeaderDictionary
 from libkeepass.hbio import HashedBlockIO
 
 

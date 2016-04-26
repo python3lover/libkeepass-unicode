@@ -9,8 +9,8 @@ import base64
 from libkeepass.crypto import xor, sha256, aes_cbc_decrypt
 from libkeepass.crypto import transform_key, unpad
 
-from libkeepass.common import load_keyfile, stream_unpack
-from libkeepass.common import KDBFile, HeaderDictionary
+from libkeepass.libkeepass_common import load_keyfile, stream_unpack
+from libkeepass.libkeepass_common import KDBFile, HeaderDictionary
 
 
 KDB3_SIGNATURE = (0x9AA2D903, 0xB54BFB65)

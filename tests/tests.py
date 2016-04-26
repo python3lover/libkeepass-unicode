@@ -4,7 +4,7 @@ import sys
 import unittest
 
 import libkeepass
-import libkeepass.common
+import libkeepass.libkeepass_common
 import libkeepass.kdb4
 import libkeepass.kdb3
 
@@ -89,7 +89,7 @@ class TestModule(unittest.TestCase):
 
 class TestCommon(unittest.TestCase):
     def test_header_dict(self):
-        h = libkeepass.common.HeaderDictionary()
+        h = libkeepass.libkeepass_common.HeaderDictionary()
         # configure fields
         h.fields = {'first': 1, 'second': 2}
 

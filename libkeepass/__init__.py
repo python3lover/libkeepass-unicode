@@ -2,7 +2,7 @@
 import io
 from contextlib import contextmanager
 
-import libkeepass.common
+import libkeepass.libkeepass_common
 import libkeepass.kdb3
 import libkeepass.kdb4
 
@@ -29,7 +29,7 @@ def open(filename, **credentials):
     kdb = None
     try:
         with io.open(filename, 'rb') as stream:
-            signature = common.read_signature(stream)
+            signature = libkeepass_common.read_signature(stream)
             cls = get_kdb_reader(signature)
             kdb = cls(stream, **credentials)
             yield kdb
