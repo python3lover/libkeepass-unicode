@@ -214,7 +214,6 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
     with libkeepass.open(kdbx_file, password=kdbx_password, keyfile=kdbx_keyfile) as kdb:
         et = kdb.tree
         # TODO Paths like FOLDER1/FOLDER2 should be supported
-        # FIXME No entries are written if the group already exists
         destination_group = find_group(et, group_destination_name)
         if not destination_group:
             logging.info(
