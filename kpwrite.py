@@ -57,7 +57,13 @@ def parse_args():
 
 
 def find_group(etree, group_name):
-    return etree.xpath('//Group/Name[text()="{}"]'.format(group_name))
+    result = etree.xpath('//Group/Name[text()="{}"]/..'.format(group_name))
+    # FIXME This raises a FutureWarning:
+    # kpwrite.py:217: FutureWarning: The behavior of this method will change in
+    # future versions. Use specific 'len(elem)' or 'elem is not None' test
+    # instead.
+    if len(result) > 0:
+        return result[0]
 
 def generate_unique_uuid(etree):
     # FIXME This makes the database corrupt
@@ -207,8 +213,8 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
     )
     with libkeepass.open(kdbx_file, password=kdbx_password, keyfile=kdbx_keyfile) as kdb:
         et = kdb.tree
-        # xmldata = fromstring(kdb.pretty_print())
-        # et = lxml.etree.ElementTree(xmldata)
+        # TODO Paths like FOLDER1/FOLDER2 should be supported
+        # FIXME No entries are written if the group already exists
         destination_group = find_group(et, group_destination_name)
         if not destination_group:
             logging.info(
