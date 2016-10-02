@@ -3,6 +3,7 @@
 
 
 from __future__ import print_function
+from __future__ import unicode_literals
 from datetime import datetime
 from lxml.etree import Element
 import argparse
@@ -55,6 +56,16 @@ def parse_args():
         help='Password to put in the new entry',
         required=True
     )
+    parser.add_argument(
+        '--entry-url',
+        help='URL of the new entry',
+        required=False
+    )
+    parser.add_argument(
+        '-N', '--entry-notes',
+        help='Notes for the new entry',
+        required=False
+    )
     return parser.parse_args()
 
 
@@ -63,7 +74,6 @@ def find_group_by_path(etree, group_name=None):
     if group_name:  # if group_name is not set, assume we look for root dir
         for s in group_name.split('/'):
             xp += '/Group/Name[text()="{}"]/..'.format(s)
-    print(xp)
     result = etree.xpath(xp)
     # FIXME This raises a FutureWarning:
     # kpwrite.py:217: FutureWarning: The behavior of this method will change in
@@ -245,7 +255,8 @@ def create_entry(etree, group, entry_name, entry_username, entry_password,
 
 
 def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
-                entry_username, entry_password, kdbx_keyfile=None):
+                entry_username, entry_password, entry_url, entry_notes,
+                kdbx_keyfile=None):
     logging.info(
         'Atempt to write entry "{}: {}:{}" to {}'.format(
             entry_name, entry_username, entry_password, group_destination_name
@@ -262,7 +273,8 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
             )
             destination_group = create_group_path(et, group_destination_name)
         create_entry(
-            et, destination_group, entry_name, entry_username, entry_password
+            et, destination_group, entry_name, entry_username, entry_password,
+            entry_notes, entry_url
         )
         outstream = open(
             os.path.splitext(kdbx_file)[0] + 'new.kdbx',
@@ -280,5 +292,7 @@ if __name__ == '__main__':
         group_destination_name=args.destination,
         entry_name=args.entry,
         entry_username=args.entry_username,
-        entry_password=args.entry_password
+        entry_password=args.entry_password,
+        entry_url=args.entry_url,
+        entry_notes=args.entry_notes
     )
