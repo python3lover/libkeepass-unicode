@@ -357,7 +357,6 @@ def update_entry(entry, entry_title=None, entry_username=None,
     if entry_expiration_date:
         entry.Times.ExpiryTime = entry_expiration_date
     if entry_tags:
-        print(';'.join(entry_tags))
         entry.Tags = ';'.join(entry_tags)
     entry.Times.LastModificationTime = dateformat()
 
@@ -397,15 +396,15 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
                 entry_password, entry_notes, entry_url, entry_tags
             )
         outstream = open(
-            os.path.splitext(kdbx_file)[0] + '_kpwrite.kdbx',
-            'w+'
+            '{}_kpwrite{}'.format(
+                os.path.splitext(kdbx_file)[0], os.path.splitext(kdbx_file)[1]
+            ), 'w+'
         ).__enter__()
         kdb.write_to(outstream)
 
 
 if __name__ == '__main__':
     args = parse_args()
-    print(args.entry_tags)
     write_entry(
         kdbx_file=args.database,
         kdbx_password=args.password,
