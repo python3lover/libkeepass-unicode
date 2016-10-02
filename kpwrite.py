@@ -163,13 +163,20 @@ def get_notes_element(notes):
     return __get_string_element('Notes', notes)
 
 
-def get_time_element(expires=False, expiry_time=None):
+def dateformat(time=None):
     dformat = '%Y-%m-%dT%H:%M:%SZ'
-    now_str = datetime.strftime(datetime.now(), format=dformat)
-    if expiry_time:
-        expiry_time_str = datetime.strftime(datetime.now, format=dformat)
+    if not time:
+        time = datetime.utcnow()
     else:
-        expiry_time_str = now_str
+        # Convert local datetime to utc
+        UTC_OFFSET_TIMEDELTA = datetime.utcnow() - datetime.now()
+        time = time + UTC_OFFSET_TIMEDELTA
+    return datetime.strftime(time, format=dformat)
+
+
+def get_time_element(expires=False, expiry_time=None):
+    now_str = dateformat()
+    expiry_time_str = dateformat(expiry_time)
 
     times_el = Element('Times')
     ctime_el = Element('CreationTime')
@@ -259,6 +266,58 @@ def create_entry(etree, group, entry_name, entry_username, entry_password,
     return entry_el
 
 
+def touch_entry(entry):
+    '''
+    Update last access time of an entry
+    '''
+    entry.Times.LastAccessTime = dateformat()
+
+
+def __get_entry_string_field(entry, key):
+    return __xpath(entry, 'String/Key[text()="{}"]/..'.format(key))
+
+
+def get_entry_title_field(entry):
+    return __get_entry_string_field(entry, 'Title')
+
+
+def get_entry_password_field(entry):
+    return __get_entry_string_field(entry, 'Password')
+
+
+def get_entry_username_field(entry):
+    return __get_entry_string_field(entry, 'UserName')
+
+
+def get_entry_notes_field(entry):
+    return __get_entry_string_field(entry, 'Notes')
+
+
+def get_entry_url_field(entry):
+    return __get_entry_string_field(entry, 'URL')
+
+
+def update_entry(entry, entry_title=None, entry_username=None,
+                 entry_password=None, entry_url=None, entry_notes=None,
+                 entry_expires=None, entry_expiration_date=None):
+    # TODO update history
+    if entry_title:
+        get_entry_title_field(entry).Value = entry_title
+    if entry_username:
+        get_entry_username_field(entry).Value = entry_username
+    if entry_password:
+        get_entry_password_field(entry).Value = entry_password
+    if entry_url:
+        get_entry_url_field(entry).Value = entry_url
+    if entry_notes:
+        get_entry_notes_field(entry).Value = entry_notes
+    if entry_expires is not None:
+        entry.Times.Expires = str(entry_expires)
+    if entry_expiration_date:
+        entry.Times.ExpiryTime = entry_expiration_date
+    entry.Times.LastModificationTime = dateformat()
+
+
 def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
                 entry_username, entry_password, entry_url, entry_notes,
                 kdbx_keyfile=None):
@@ -280,14 +339,19 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
         e = find_entry(destination_group, entry_name)
         if e:
             logger.warning(
-                'An entry {} already exists in {}'.format(
+                'An entry {} already exists in {}. Update it.'.format(
                     entry_name, group_destination_name
                 )
             )
-        create_entry(
-            et, destination_group, entry_name, entry_username, entry_password,
-            entry_notes, entry_url
-        )
+            update_entry(
+                e, entry_name, entry_username, entry_password,
+                entry_url, entry_notes
+            )
+        else:
+            create_entry(
+                et, destination_group, entry_name, entry_username,
+                entry_password, entry_notes, entry_url
+            )
         outstream = open(
             os.path.splitext(kdbx_file)[0] + '_kpwrite.kdbx',
             'w+'
