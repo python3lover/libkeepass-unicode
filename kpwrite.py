@@ -69,18 +69,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def find_group_by_path(etree, group_name=None):
-    xp = '/KeePassFile/Root/Group'
-    if group_name:  # if group_name is not set, assume we look for root dir
-        for s in group_name.split('/'):
-            xp += '/Group/Name[text()="{}"]/..'.format(s)
-    result = etree.xpath(xp)
+def __xpath(tree, xpath_str):
+    result = tree.xpath(xpath_str)
     # FIXME This raises a FutureWarning:
     # kpwrite.py:217: FutureWarning: The behavior of this method will change in
     # future versions. Use specific 'len(elem)' or 'elem is not None' test
     # instead.
     if len(result) > 0:
         return result[0]
+
+def find_group_by_path(etree, group_path_str=None):
+    xp = '/KeePassFile/Root/Group'
+    # if group_path_str is not set, assume we look for root dir
+    if group_path_str:
+        for s in group_path_str.split('/'):
+            xp += '/Group/Name[text()="{}"]/..'.format(s)
+    return __xpath(etree, xp)
 
 
 def get_root_group(etree):
@@ -90,13 +94,7 @@ def get_root_group(etree):
 def find_group_by_name(etree, group_name):
     '''
     '''
-    result = etree.xpath('//Group/Name[text()="{}"]/..'.format(group_name))
-    # FIXME This raises a FutureWarning:
-    # kpwrite.py:217: FutureWarning: The behavior of this method will change in
-    # future versions. Use specific 'len(elem)' or 'elem is not None' test
-    # instead.
-    if len(result) > 0:
-        return result[0]
+    return __xpath(etree, '//Group/Name[text()="{}"]/..'.format(group_name))
 
 
 def find_group(etree, group_name):
@@ -228,6 +226,13 @@ def __create_group_at_path(etree, group_path, group_name):
         return group_el
     else:
         logger.error('Could not find group at {}'.format(group_path))
+
+
+def find_entry(etree, entry_name):
+    xp = '//Entry/String/Key[text()="Title"]/../Value[text()="{}"]/../..'.format(
+        entry_name
+    )
+    return __xpath(etree, xp)
 
 
 def create_entry(etree, group, entry_name, entry_username, entry_password,
