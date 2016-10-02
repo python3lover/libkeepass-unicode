@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import argparse
 import base64
 import fnmatch
@@ -87,7 +88,6 @@ class KeePassShell(cmd.Cmd):
     # def do_attach(self, arg):
     # """Manage attachments: attach <path to entry|entry number>"""
     # pass
-
     def complete_cd(self, text, line, begidx, endidx):
         return [shlex.quote(g) for g in self._groups() if g.lower().startswith(text.lower())]
 

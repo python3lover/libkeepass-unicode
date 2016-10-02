@@ -2,12 +2,14 @@
 # coding: utf-8
 
 
+from __future__ import print_function
 from datetime import datetime
 from lxml.etree import Element
 import argparse
 import base64
 import libkeepass
 import logging
+import os
 import uuid
 
 
@@ -56,7 +58,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def find_group(etree, group_name):
+def find_group_by_path(etree, group_name):
+    xp = '/KeePassFile/Root/Group'
+    for s in group_name.split('/'):
+        xp += '/Group/Name[text()="{}"]/..'.format(s)
+    result = etree.xpath(xp)
+    # FIXME This raises a FutureWarning:
+    # kpwrite.py:217: FutureWarning: The behavior of this method will change in
+    # future versions. Use specific 'len(elem)' or 'elem is not None' test
+    # instead.
+    if len(result) > 0:
+        return result[0]
+
+
+def find_group_by_name(etree, group_name):
+    '''
+    '''
     result = etree.xpath('//Group/Name[text()="{}"]/..'.format(group_name))
     # FIXME This raises a FutureWarning:
     # kpwrite.py:217: FutureWarning: The behavior of this method will change in
@@ -64,6 +81,14 @@ def find_group(etree, group_name):
     # instead.
     if len(result) > 0:
         return result[0]
+
+
+
+def find_group(etree, group_name):
+    # FIXME: This will create the group in the root folder if it does not exist
+    gname = os.path.dirname(group_name) if group_name.contains('/') else group_name
+    return find_group_by_name(gname)
+
 
 def generate_unique_uuid(etree):
     # FIXME This makes the database corrupt
@@ -168,16 +193,21 @@ def get_time_element(expires=False, expiry_time=None):
 
     return times_el
 
-def create_group(etree, group_name):
+def create_group(etree, group_path):
     # TODO Don't necessarily create the group under the root group
-    root_group = etree.xpath('/KeePassFile/Root/Group')[0]
-    group_el = Element('Group')
-    name_el = get_name_element(group_name)
-    uuid_el = get_uuid_element(etree)
-    group_el.append(uuid_el)
-    group_el.append(name_el)
-    root_group.append(group_el)
-    return group_el
+    # root_group = etree.xpath('/KeePassFile/Root/Group')[0]
+    parent_path, group_name = os.path.split(group_path)
+    parent_group = find_group_by_path(etree, parent_path)
+    if parent_group:
+        group_el = Element('Group')
+        name_el = get_name_element(group_name)
+        uuid_el = get_uuid_element(etree)
+        group_el.append(uuid_el)
+        group_el.append(name_el)
+        parent_group.append(group_el)
+        return group_el
+    else:
+        return create_group(etree, parent_path)
 
 
 def create_entry(etree, group, entry_name, entry_username, entry_password,
@@ -214,7 +244,7 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
     with libkeepass.open(kdbx_file, password=kdbx_password, keyfile=kdbx_keyfile) as kdb:
         et = kdb.tree
         # TODO Paths like FOLDER1/FOLDER2 should be supported
-        destination_group = find_group(et, group_destination_name)
+        destination_group = find_group_by_path(et, group_destination_name)
         if not destination_group:
             logging.info(
                 'Could not find destination group {}. Create it.'.format(
