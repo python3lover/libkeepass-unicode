@@ -38,6 +38,12 @@ def parse_args():
         required=True
     )
     parser.add_argument(
+        '-o', '--outfile',
+        # type=argparse.FileType('w'),
+        help='File to write the updated database to',
+        required=False
+    )
+    parser.add_argument(
         '-D', '--destination',
         help='Group where to write the new entry to',
         required=False
@@ -371,7 +377,8 @@ def update_entry(entry, entry_title=None, entry_username=None,
 
 def write_entry(kdbx_file, kdbx_password, group_destination_name,
                 entry_name, entry_username, entry_password, entry_url,
-                entry_notes, entry_tags, kdbx_keyfile=None, force_creation=False):
+                entry_notes, entry_tags, kdbx_keyfile=None,
+                force_creation=False, outfile=None):
     logging.info(
         'Atempt to write entry "{}: {}:{}" to {}'.format(
             entry_name, entry_username, entry_password, group_destination_name
@@ -404,11 +411,10 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name,
                 entry_password, entry_notes, entry_url, entry_tags
             )
         outstream = open(
-            '{}_kpwrite{}'.format(
-                os.path.splitext(kdbx_file)[0], os.path.splitext(kdbx_file)[1]
-            ), 'w+'
+            kdbx_file if not outfile else outfile, 'w+'
         ).__enter__()
         kdb.write_to(outstream)
+        logging.info('Wrote database to {}'.format(outstream.name))
 
 
 if __name__ == '__main__':
@@ -417,6 +423,7 @@ if __name__ == '__main__':
         kdbx_file=args.database,
         kdbx_password=args.password,
         kdbx_keyfile=args.keyfile,
+        outfile=args.outfile,
         group_destination_name=args.destination,
         force_creation=args.force,
         entry_name=args.entry,
