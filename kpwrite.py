@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument(
         '-D', '--destination',
         help='Group where to write the new entry to',
-        required=True
+        required=False
     )
     parser.add_argument(
         '-e', '--entry',
@@ -76,6 +76,7 @@ def find_group_by_path(etree, group_name=None):
 def get_root_group(etree):
     return find_group_by_path(etree)
 
+
 def find_group_by_name(etree, group_name):
     '''
     '''
@@ -88,24 +89,14 @@ def find_group_by_name(etree, group_name):
         return result[0]
 
 
-
 def find_group(etree, group_name):
-    # FIXME: This will create the group in the root folder if it does not exist
     gname = os.path.dirname(group_name) if group_name.contains('/') else group_name
     return find_group_by_name(gname)
 
 
 def generate_unique_uuid(etree):
-    # FIXME This makes the database corrupt
-    # "Value does not fall within the expected range"
-    # NOTE: The stored value is base64 encoded
-    # Eg: "klAHdnpC50mbES2Uk7agSg=="
-    # It decodes to something like:
-    # "\x92P\x07vzB\xe7I\x9b\x11-\x94\x93\xb6\xa0J"
     uuids = [str(x) for x in etree.xpath('//UUID')]
     while True:
-        # rand_uuid = str(uuid.uuid1()).replace('-', '')[:24]
-        # rand_uuid = base64.b64encode(bytearray(os.urandom(16)))
         rand_uuid = base64.b64encode(uuid.uuid1().bytes)
         if rand_uuid not in uuids:
             return rand_uuid
@@ -210,7 +201,12 @@ def create_group_path(etree, group_path):
 
 
 def __create_group_at_path(etree, group_path, group_name):
-    logger.info('Create group {} at {}'.format(group_name, group_path))
+    logger.info(
+        'Create group {} at {}'.format(
+            group_name,
+            group_path if group_path else 'root dir'
+        )
+    )
     parent_group = find_group_by_path(etree, group_path)
     if parent_group:
         group_el = Element('Group')
@@ -257,7 +253,6 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
     )
     with libkeepass.open(kdbx_file, password=kdbx_password, keyfile=kdbx_keyfile) as kdb:
         et = kdb.tree
-        # TODO Paths like FOLDER1/FOLDER2 should be supported
         destination_group = find_group_by_path(et, group_destination_name)
         if not destination_group:
             logging.info(
@@ -269,7 +264,10 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
         create_entry(
             et, destination_group, entry_name, entry_username, entry_password
         )
-        outstream = open(kdbx_file + 'new.kdbx', 'w+').__enter__()
+        outstream = open(
+            os.path.splitext(kdbx_file)[0] + 'new.kdbx',
+            'w+'
+        ).__enter__()
         kdb.write_to(outstream)
 
 
