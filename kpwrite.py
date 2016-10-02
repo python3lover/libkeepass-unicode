@@ -43,8 +43,16 @@ def parse_args():
         required=False
     )
     parser.add_argument(
+        '-f', '--force',
+        help='Force the creation of a new entry, even if there already is '\
+            'one with the same title',
+        action='store_true',
+        default=False,
+        required=False
+    )
+    parser.add_argument(
         '-e', '--entry',
-        help='Name of the new entry',
+        help='Name (title) of the new entry',
         required=True
     )
     parser.add_argument(
@@ -361,9 +369,9 @@ def update_entry(entry, entry_title=None, entry_username=None,
     entry.Times.LastModificationTime = dateformat()
 
 
-def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
-                entry_username, entry_password, entry_url, entry_notes,
-                entry_tags, kdbx_keyfile=None):
+def write_entry(kdbx_file, kdbx_password, group_destination_name,
+                entry_name, entry_username, entry_password, entry_url,
+                entry_notes, entry_tags, kdbx_keyfile=None, force_creation=False):
     logging.info(
         'Atempt to write entry "{}: {}:{}" to {}'.format(
             entry_name, entry_username, entry_password, group_destination_name
@@ -380,7 +388,7 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
             )
             destination_group = create_group_path(et, group_destination_name)
         e = find_entry(destination_group, entry_name)
-        if e:
+        if e and not force_creation:
             logger.warning(
                 'An entry {} already exists in {}. Update it.'.format(
                     entry_name, group_destination_name
@@ -410,6 +418,7 @@ if __name__ == '__main__':
         kdbx_password=args.password,
         kdbx_keyfile=args.keyfile,
         group_destination_name=args.destination,
+        force_creation=args.force,
         entry_name=args.entry,
         entry_username=args.entry_username,
         entry_password=args.entry_password,
