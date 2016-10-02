@@ -58,10 +58,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def find_group_by_path(etree, group_name):
+def find_group_by_path(etree, group_name=None):
     xp = '/KeePassFile/Root/Group'
-    for s in group_name.split('/'):
-        xp += '/Group/Name[text()="{}"]/..'.format(s)
+    if group_name:  # if group_name is not set, assume we look for root dir
+        for s in group_name.split('/'):
+            xp += '/Group/Name[text()="{}"]/..'.format(s)
+    print(xp)
     result = etree.xpath(xp)
     # FIXME This raises a FutureWarning:
     # kpwrite.py:217: FutureWarning: The behavior of this method will change in
@@ -70,6 +72,9 @@ def find_group_by_path(etree, group_name):
     if len(result) > 0:
         return result[0]
 
+
+def get_root_group(etree):
+    return find_group_by_path(etree)
 
 def find_group_by_name(etree, group_name):
     '''
@@ -193,11 +198,20 @@ def get_time_element(expires=False, expiry_time=None):
 
     return times_el
 
-def create_group(etree, group_path):
-    # TODO Don't necessarily create the group under the root group
-    # root_group = etree.xpath('/KeePassFile/Root/Group')[0]
-    parent_path, group_name = os.path.split(group_path)
-    parent_group = find_group_by_path(etree, parent_path)
+
+def create_group_path(etree, group_path):
+    logger.info('Create group {}'.format(group_path))
+    group = get_root_group(etree)
+    path = ''
+    for gn in group_path.split('/'):
+        group = __create_group_at_path(etree, path.rstrip('/'), gn)
+        path += gn + '/'
+    return group
+
+
+def __create_group_at_path(etree, group_path, group_name):
+    logger.info('Create group {} at {}'.format(group_name, group_path))
+    parent_group = find_group_by_path(etree, group_path)
     if parent_group:
         group_el = Element('Group')
         name_el = get_name_element(group_name)
@@ -207,7 +221,7 @@ def create_group(etree, group_path):
         parent_group.append(group_el)
         return group_el
     else:
-        return create_group(etree, parent_path)
+        logger.error('Could not find group at {}'.format(group_path))
 
 
 def create_entry(etree, group, entry_name, entry_username, entry_password,
@@ -251,7 +265,7 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
                     group_destination_name
                 )
             )
-            destination_group = create_group(et, group_destination_name)
+            destination_group = create_group_path(et, group_destination_name)
         create_entry(
             et, destination_group, entry_name, entry_username, entry_password
         )
