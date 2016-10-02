@@ -277,12 +277,19 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
                 )
             )
             destination_group = create_group_path(et, group_destination_name)
+        e = find_entry(destination_group, entry_name)
+        if e:
+            logger.warning(
+                'An entry {} already exists in {}'.format(
+                    entry_name, group_destination_name
+                )
+            )
         create_entry(
             et, destination_group, entry_name, entry_username, entry_password,
             entry_notes, entry_url
         )
         outstream = open(
-            os.path.splitext(kdbx_file)[0] + 'new.kdbx',
+            os.path.splitext(kdbx_file)[0] + '_kpwrite.kdbx',
             'w+'
         ).__enter__()
         kdb.write_to(outstream)
