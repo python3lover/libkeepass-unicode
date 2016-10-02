@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
+from copy import deepcopy
 from datetime import datetime
 from lxml.etree import Element
 import argparse
@@ -297,10 +298,24 @@ def get_entry_url_field(entry):
     return __get_entry_string_field(entry, 'URL')
 
 
+def archive_entry(entry):
+    '''
+    Save the entry in its history
+    '''
+    archive = deepcopy(entry)
+    if getattr(entry, 'History'):
+        archive.remove(archive.History)
+        entry.History.append(archive)
+    else:
+        history = Element('History')
+        history.append(archive)
+        entry.append(history)
+
+
 def update_entry(entry, entry_title=None, entry_username=None,
                  entry_password=None, entry_url=None, entry_notes=None,
                  entry_expires=None, entry_expiration_date=None):
-    # TODO update history
+    archive_entry(entry)
     if entry_title:
         get_entry_title_field(entry).Value = entry_title
     if entry_username:
