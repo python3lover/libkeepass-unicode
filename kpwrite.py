@@ -67,7 +67,22 @@ def parse_args():
         help='Notes for the new entry',
         required=False
     )
+    parser.add_argument(
+        '-T', '--entry-tags',
+        help='Tags for the entry',
+        action='append',
+        required=False
+    )
     return parser.parse_args()
+
+
+def dump_to_file(kdb, outfile):
+    '''
+    Dump the content of the database to a file
+    NOTE The file is unencrypted!
+    '''
+    with open(outfile, 'w+') as f:
+        f.write(kdb.pretty_print())
 
 
 def __xpath(tree, xpath_str):
@@ -122,6 +137,13 @@ def get_name_element(name):
     name_el = Element('Name')
     name_el.text = name
     return name_el
+
+
+def get_tags_element(tags):
+    tags_el = Element('Tags')
+    if type(tags) is list:
+        tags_el.text = ';'.join(tags)
+    return tags_el
 
 
 def __get_string_element(key, value):
@@ -244,8 +266,8 @@ def find_entry(etree, entry_name):
 
 
 def create_entry(etree, group, entry_name, entry_username, entry_password,
-                 entry_notes=None, entry_url=None, entry_expires=False,
-                 entry_expiration_date=None):
+                 entry_notes=None, entry_url=None, entry_tags=None,
+                 entry_expires=False, entry_expiration_date=None):
     entry_el = Element('Entry')
     title_el = get_title_element(entry_name)
     uuid_el = get_uuid_element(etree)
@@ -258,6 +280,9 @@ def create_entry(etree, group, entry_name, entry_username, entry_password,
     if entry_notes:
         notes_el = get_notes_element(entry_notes)
         entry_el.append(notes_el)
+    if entry_tags:
+        tags_el = get_tags_element(entry_tags)
+        entry_el.append(tags_el)
     entry_el.append(title_el)
     entry_el.append(uuid_el)
     entry_el.append(username_el)
@@ -314,6 +339,7 @@ def archive_entry(entry):
 
 def update_entry(entry, entry_title=None, entry_username=None,
                  entry_password=None, entry_url=None, entry_notes=None,
+                 entry_tags=None,
                  entry_expires=None, entry_expiration_date=None):
     archive_entry(entry)
     if entry_title:
@@ -330,12 +356,15 @@ def update_entry(entry, entry_title=None, entry_username=None,
         entry.Times.Expires = str(entry_expires)
     if entry_expiration_date:
         entry.Times.ExpiryTime = entry_expiration_date
+    if entry_tags:
+        print(';'.join(entry_tags))
+        entry.Tags = ';'.join(entry_tags)
     entry.Times.LastModificationTime = dateformat()
 
 
 def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
                 entry_username, entry_password, entry_url, entry_notes,
-                kdbx_keyfile=None):
+                entry_tags, kdbx_keyfile=None):
     logging.info(
         'Atempt to write entry "{}: {}:{}" to {}'.format(
             entry_name, entry_username, entry_password, group_destination_name
@@ -360,12 +389,12 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
             )
             update_entry(
                 e, entry_name, entry_username, entry_password,
-                entry_url, entry_notes
+                entry_url, entry_notes, entry_tags
             )
         else:
             create_entry(
                 et, destination_group, entry_name, entry_username,
-                entry_password, entry_notes, entry_url
+                entry_password, entry_notes, entry_url, entry_tags
             )
         outstream = open(
             os.path.splitext(kdbx_file)[0] + '_kpwrite.kdbx',
@@ -376,6 +405,7 @@ def write_entry(kdbx_file, kdbx_password, group_destination_name, entry_name,
 
 if __name__ == '__main__':
     args = parse_args()
+    print(args.entry_tags)
     write_entry(
         kdbx_file=args.database,
         kdbx_password=args.password,
@@ -385,5 +415,6 @@ if __name__ == '__main__':
         entry_username=args.entry_username,
         entry_password=args.entry_password,
         entry_url=args.entry_url,
-        entry_notes=args.entry_notes
+        entry_notes=args.entry_notes,
+        entry_tags=args.entry_tags,
     )
