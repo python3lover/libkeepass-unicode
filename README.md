@@ -6,14 +6,14 @@ Python module to read KeePass 1.x/KeePassX (v3) and KeePass 2.x (v4) files.
 Warning
 -------
 
-"this code makes no attempt to secure its memory"
+**This library makes no attempt to secure its memory.**
 
 Requirements
 ------------
 
-see requirements.txt
+Refer to requirements.txt (doesn't exist)
 
-KeePass 1.x support
+KeePass 1.X support
 -------------------
 
 Currently the v3 reader only goes so far, as outputting the raw decrypted data.
@@ -22,9 +22,9 @@ integrated from Brett Viren's work.
 
 Only passwords are supported.
 
-No write support.
+**No write support.**
 
-KeePass 2.x support
+KeePass 2.X support
 -------------------
 
 The v4 reader can output the decrypted XML document that file format is based
